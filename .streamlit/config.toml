@@ -1,0 +1,4 @@
+[server]
+headless = true
+fileWatcherType = "none"
+folderWatchBlacklist = ["chroma_db", "chat_history", "vector_db"]

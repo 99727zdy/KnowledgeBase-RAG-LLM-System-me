@@ -4,10 +4,10 @@
 import os
 import  config_data as config
 import  hashlib
-from langchain_chroma import Chroma
 from langchain_community.embeddings import DashScopeEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from datetime import datetime
+from vector_stores import get_vector_store, save_vector_store
 
 def check_md5(md5_str:str):
     """检查传入的MD5字符串是否已经被处理过了
@@ -48,11 +48,9 @@ class KnowledgeBaseService(object):
         # 如果文件夹不存在则创建，如果存在则跳过
         os.makedirs(config.persist_directory,exist_ok=True)
 
-        self.chroma=Chroma(          # 向量存储的示例 Chroma向量库对象
-            collection_name=config.collection_name,      #数据库表名
-            embedding_function=DashScopeEmbeddings(model="text-embedding-v4"),
-            persist_directory=config.persist_directory,   #数据库本地存储文件夹
-        )      # 向量存储的实例，Chroma向量库对象
+        self.vector_store = get_vector_store(
+            DashScopeEmbeddings(model=config.embedding_model_name)
+        )
         self.spliter=RecursiveCharacterTextSplitter(  # 文本分割器的对象
             chunk_size=config.chunk_size,             # 分割后的文本段最大长度
             chunk_overlap=config.chunk_overlap,       # 连续文本段之间的字符重叠数量
@@ -73,17 +71,16 @@ class KnowledgeBaseService(object):
 
         metadata={
             "source":filename,
-            #2026-3-8 15:43:30
+            # 2026-3-8 15:43:30
             "create_time":datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "operator":"客户",
         }
 
-        self.chroma.add_texts(        # 内容加载到向量库中
-            # iterable-> list \tuple
+        self.vector_store.add_texts(
             knowledge_chunks,
-            metadata=[metadata for _ in knowledge_chunks],
-
+            metadatas=[metadata for _ in knowledge_chunks],
         )
+        save_vector_store(self.vector_store)
         save_md5(md5_hex)
         return "[Success]内容已经成功载入向量库"
 

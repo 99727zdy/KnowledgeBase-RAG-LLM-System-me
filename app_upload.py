@@ -36,5 +36,8 @@ if uploader_file is not None:
 
     with st.spinner("载入知识库中。。。"):     # 在 spinner内的代码执行过程中，会有一个转圈动画，优化用户体验
         time.sleep(1)
-        result= st.session_state["service"].upload_by_str(text,file_name)
-        st.write(result)
+        try:
+            result= st.session_state["service"].upload_by_str(text,file_name)
+            st.write(result)
+        except Exception as e:
+            st.error(f"入库失败：{e}")
